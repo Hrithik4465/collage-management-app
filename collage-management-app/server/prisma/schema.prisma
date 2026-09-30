@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          String         // "ADMIN", "CO_ADMIN", "FACULTY", "STUDENT"
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  student       Student?
+  faculty       Faculty?
+  notifications Notification[]
+  announcements Announcement[] // announcements created by admin/faculty
+}
+
+model Department {
+  id            String         @id @default(uuid())
+  name          String
+  code          String         @unique
+  createdAt     DateTime       @default(now())
+  
+  students      Student[]
+  faculty       Faculty[]
+  courses       Course[]
+}
+
+model Course {
+  id            String         @id @default(uuid())
+  name          String
+  code          String         @unique
+  departmentId  String
+  department    Department     @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  
+  subjects      Subject[]
+  students      Student[]
+}
+
+model Semester {
+  id            String         @id @default(uuid())
+  number        Int            @unique // 1, 2, 3, etc.
+  name          String
+  createdAt     DateTime       @default(now())
+  
+  students      Student[]
+  subjects      Subject[]
+  timetables    Timetable[]
+  exams         Exam[]
+}
+
+model Student {
+  id            String         @id @default(uuid())
+  rollNumber    String         @unique
+  phone         String?
+  section       String         // e.g., "A", "B"
+  
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  departmentId  String
+  department    Department     @relation(fields: [departmentId], references: [id])
+  
+  courseId      String
+  course        Course         @relation(fields: [courseId], references: [id])
+  
+  semesterId    String
+  semester      Semester       @relation(fields: [semesterId], references: [id])
+  
+  attendances   Attendance[]
+  submissions   AssignmentSubmission[]
+  quizSubmissions QuizSubmission[]
+  results       Result[]
+  feeStatuses   FeeStatus[]
+}
+
+model Faculty {
+  id            String         @id @default(uuid())
+  phone         String?
+  
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  departmentId  String
+  department    Department     @relation(fields: [departmentId], references: [id])
+  
+  subjects      Subject[]
+  assignments   Assignment[]
+  quizzes       Quiz[]
+  attendances   Attendance[]   @relation("MarkedBy")
+}
+
+model Subject {
+  id            String         @id @default(uuid())
+  name          String
+  code          String         @unique
+  credits       Int
+  
+  courseId      String
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  semesterId    String
+  semester      Semester       @relation(fields: [semesterId], references: [id])
+  
+  facultyId     String?
+  faculty       Faculty?       @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  
+  timetables    Timetable[]
+  attendances   Attendance[]
+  assignments   Assignment[]
+  quizzes       Quiz[]
+  exams         Exam[]
+  results       Result[]
+}
+
+model Timetable {
+  id            String         @id @default(uuid())
+  dayOfWeek     String         // "Monday", "Tuesday", etc.
+  startTime     String         // "09:00"
+  endTime       String         // "09:50"
+  room          String         // "Room 101"
+  section       String         // "A", "B"
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  semesterId    String
+  semester      Semester       @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id            String         @id @default(uuid())
+  date          String         // YYYY-MM-DD
+  status        String         // "PRESENT", "ABSENT"
+  
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  markedById    String
+  markedBy      Faculty        @relation("MarkedBy", fields: [markedById], references: [id])
+  
+  createdAt     DateTime       @default(now())
+}
+
+model Assignment {
+  id            String         @id @default(uuid())
+  title         String
+  description   String
+  filePath      String?        // PDF file name or link
+  deadline      String         // YYYY-MM-DD or DateTime string
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  facultyId     String
+  faculty       Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime       @default(now())
+  submissions   AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id            String         @id @default(uuid())
+  filePath      String         // Submitted file path/name
+  status        String         // "PENDING", "GRADED"
+  grade         String?        // A, B, C, etc. or numeric marks
+  remarks       String?
+  submittedAt   DateTime       @default(now())
+  
+  assignmentId  String
+  assignment    Assignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id            String         @id @default(uuid())
+  title         String
+  content       String
+  category      String         // "GENERAL", "DEPARTMENT", "COURSE"
+  
+  departmentId  String?        // optional target
+  courseId      String?        // optional target
+  
+  createdById   String
+  createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime       @default(now())
+}
+
+model Exam {
+  id            String         @id @default(uuid())
+  title         String         // e.g., "Midterm Exam", "End Semester Exam"
+  date          String         // YYYY-MM-DD
+  time          String         // "10:00 AM"
+  room          String         // "Exam Hall 1"
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  semesterId    String
+  semester      Semester       @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  
+  results       Result[]
+}
+
+model Result {
+  id            String         @id @default(uuid())
+  marks         Float
+  maxMarks      Float
+  grade         String
+  remarks       String?
+  createdAt     DateTime       @default(now())
+  
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  examId        String?
+  exam          Exam?          @relation(fields: [examId], references: [id], onDelete: SetNull)
+}
+
+model FeeStatus {
+  id            String         @id @default(uuid())
+  title         String         // e.g., "Semester 1 Tuition Fee", "Lab Fee"
+  amount        Float
+  dueDate       String         // YYYY-MM-DD
+  status        String         // "PAID", "PENDING", "OVERDUE"
+  paymentDate   String?        // YYYY-MM-DD
+  transactionId String?        // e.g. TXN987654321
+  remarks       String?
+  createdAt     DateTime       @default(now())
+  
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id            String         @id @default(uuid())
+  title         String
+  message       String
+  read          Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Quiz {
+  id            String         @id @default(uuid())
+  title         String
+  description   String?
+  duration      Int            @default(30) // in minutes
+  totalMarks    Float          @default(100)
+  deadline      String
+  isPublished   Boolean        @default(true)
+  questionsJson String         // JSON array of questions
+  
+  subjectId     String
+  subject       Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  facultyId     String
+  faculty       Faculty        @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime       @default(now())
+  submissions   QuizSubmission[]
+}
+
+model QuizSubmission {
+  id            String         @id @default(uuid())
+  answersJson   String         // JSON student answers
+  score         Float
+  maxScore      Float
+  submittedAt   DateTime       @default(now())
+  
+  quizId        String
+  quiz          Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
