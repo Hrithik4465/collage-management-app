@@ -35,8 +35,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/student', studentRoutes);
 
-// Simple Health Check
+// Simple Health Check & Root API Status
 app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
+});
+
+app.get('/', (req, res) => {
   res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
 });
 
@@ -51,10 +55,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(`  College Management Server running on port ${PORT}`);
-  console.log(`  Health Check: http://localhost:${PORT}/health`);
-  console.log(`==================================================`);
-});
+// Start the server (only when executed directly, not when imported as serverless function)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`==================================================`);
+    console.log(`  College Management Server running on port ${PORT}`);
+    console.log(`  Health Check: http://localhost:${PORT}/health`);
+    console.log(`==================================================`);
+  });
+}
+
+// Export Express app for Vercel Serverless Functions
+module.exports = app;
