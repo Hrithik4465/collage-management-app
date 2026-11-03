@@ -35,7 +35,20 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5f9de684-1a7b-459a-8f6d-4226e02e168d"
+      }
+    }
   }
 }
