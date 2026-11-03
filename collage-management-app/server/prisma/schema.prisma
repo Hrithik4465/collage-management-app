@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -97,6 +97,7 @@ model Faculty {
   assignments   Assignment[]
   quizzes       Quiz[]
   attendances   Attendance[]   @relation("MarkedBy")
+  studyMaterials StudyMaterial[]
 }
 
 model Subject {
@@ -120,6 +121,7 @@ model Subject {
   quizzes       Quiz[]
   exams         Exam[]
   results       Result[]
+  studyMaterials StudyMaterial[]
 }
 
 model Timetable {
@@ -294,4 +296,23 @@ model QuizSubmission {
   studentId     String
   student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
+
+model StudyMaterial {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  fileUrl     String?   // file path, uploaded document name, or resource URL
+  fileType    String?   // "PDF", "DOCUMENT", "SLIDES", "LINK", "CODE", "OTHER"
+  unit        String?   // e.g. "Unit 1", "Module 2", "Chapter 3"
+  
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  
+  facultyId   String
+  faculty     Faculty   @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 

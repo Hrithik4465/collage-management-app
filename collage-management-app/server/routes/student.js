@@ -601,4 +601,51 @@ router.get('/notifications-alerts', async (req, res) => {
   }
 });
 
+// --- STUDY MATERIALS FOR STUDENTS ---
+router.get('/study-materials', async (req, res) => {
+  const studentId = req.user.profileId;
+  const { subjectId } = req.query;
+
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    // Find subjects for student's course and semester
+    const enrolledSubjects = await prisma.subject.findMany({
+      where: {
+        courseId: student.courseId,
+        semesterId: student.semesterId,
+      },
+      select: { id: true },
+    });
+
+    const enrolledSubjectIds = enrolledSubjects.map((s) => s.id);
+
+    const whereClause = {
+      subjectId: subjectId ? subjectId : { in: enrolledSubjectIds },
+    };
+
+    const materials = await prisma.studyMaterial.findMany({
+      where: whereClause,
+      include: {
+        subject: true,
+        faculty: {
+          include: { user: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(materials);
+  } catch (error) {
+    console.error('Fetch student study materials error:', error);
+    res.status(500).json({ error: 'Failed to fetch study materials' });
+  }
+});
+
 module.exports = router;

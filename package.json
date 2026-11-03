@@ -1,0 +1,15 @@
+{
+  "name": "cms-academy-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CMS Academy Portal - College Management System (Web, Server & Android Mobile App)",
+  "scripts": {
+    "start": "node collage-management-app/server/index.js",
+    "dev:server": "node collage-management-app/server/index.js",
+    "dev:client": "npm --prefix collage-management-app/client run dev",
+    "build:client": "npm --prefix collage-management-app/client run build",
+    "build:server": "cd collage-management-app/server && npm install && npx prisma generate",
+    "build": "npm run build:server && npm run build:client"
+  }
+}
+

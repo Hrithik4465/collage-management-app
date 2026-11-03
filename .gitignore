@@ -1,0 +1,48 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Crash dumps & Log files
+*.log
+**/*.log
+hs_err_pid*
+replay_pid*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+.output/
+
+# Native Android & Gradle build caches
+.gradle/
+**/.gradle/
+**/android/.gradle/
+**/android/app/build/
+
+# Expo caches
+.expo/
+**/.expo/
+.expo-shared/
+
+# Environment and sensitive keys
+.env
+**/.env
+.env*.local
+*.keystore
+*.jks
+!debug.keystore
+
+# Database files
+*.db-journal
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

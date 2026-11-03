@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import { 
   Calendar, CheckSquare, FileText, Award, AlertCircle, Plus, ChevronRight, Download, Send, Check,
-  Users, History, BarChart3, HelpCircle, FileSpreadsheet, Search, Trash2, Eye, AlertTriangle, TrendingUp, CheckCircle, CheckCircle2, Sparkles, Filter, Clock, PanelLeftClose, PanelLeftOpen, Menu
+  Users, History, BarChart3, HelpCircle, FileSpreadsheet, Search, Trash2, Eye, AlertTriangle, TrendingUp, CheckCircle, CheckCircle2, Sparkles, Filter, Clock, PanelLeftClose, PanelLeftOpen, Menu,
+  BookOpen, Upload, FolderPlus, Link2, FileDown, ExternalLink, Layers, Copy, FileCode
 } from 'lucide-react';
 
 export default function FacultyPortal({ facultyProfile, addNotification }) {
@@ -73,6 +74,22 @@ export default function FacultyPortal({ facultyProfile, addNotification }) {
   const [gradebookSearch, setGradebookSearch] = useState('');
   const [gradebookData, setGradebookData] = useState({ subjects: [], gradebook: [] });
 
+  // 6. Study Materials
+  const [studyMaterials, setStudyMaterials] = useState([]);
+  const [materialsSubjectFilter, setMaterialsSubjectFilter] = useState('ALL');
+  const [materialsTypeFilter, setMaterialsTypeFilter] = useState('ALL');
+  const [materialsSearch, setMaterialsSearch] = useState('');
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [materialForm, setMaterialForm] = useState({
+    title: '',
+    description: '',
+    subjectId: '',
+    unit: 'Unit 1: Fundamentals',
+    fileType: 'PDF',
+    fileUrl: ''
+  });
+  const [isSubmittingMaterial, setIsSubmittingMaterial] = useState(false);
+
   const autoFillSampleQuiz = () => {
     const defaultSubId = subjects.length > 0 ? subjects[0].id : '';
     setQuizForm({
@@ -135,6 +152,8 @@ export default function FacultyPortal({ facultyProfile, addNotification }) {
       fetchAssignments();
     } else if (activeTab === 'marks') {
       fetchExams();
+    } else if (activeTab === 'study_materials') {
+      fetchStudyMaterials();
     }
   }, [activeTab, studentSearch, historySubjectFilter, analyticsSubjectFilter, gradebookSubjectId]);
 
@@ -159,6 +178,7 @@ export default function FacultyPortal({ facultyProfile, addNotification }) {
         setSelectedSubjectForMarks(res.data[0].id);
         setGradebookSubjectId(res.data[0].id);
         setQuizForm(prev => ({ ...prev, subjectId: res.data[0].id }));
+        setMaterialForm(prev => ({ ...prev, subjectId: res.data[0].id }));
       }
     } catch (err) {
       console.error(err);
@@ -485,15 +505,76 @@ export default function FacultyPortal({ facultyProfile, addNotification }) {
     }
   };
 
+  // Study Materials Logic
+  const fetchStudyMaterials = async () => {
+    try {
+      const res = await api.get('/faculty/study-materials');
+      setStudyMaterials(res.data);
+    } catch (err) {
+      console.error('Fetch study materials error:', err);
+    }
+  };
+
+  const handleCreateStudyMaterial = async (e) => {
+    e.preventDefault();
+    if (!materialForm.title || !materialForm.subjectId) {
+      addNotification('Warning', 'Please enter title and choose a subject', 'warning');
+      return;
+    }
+    setIsSubmittingMaterial(true);
+    try {
+      await api.post('/faculty/study-materials', materialForm);
+      addNotification('Success', 'Study material uploaded and published to students!', 'success');
+      setShowAddMaterialModal(false);
+      setMaterialForm({
+        title: '',
+        description: '',
+        subjectId: subjects.length > 0 ? subjects[0].id : '',
+        unit: 'Unit 1: Fundamentals',
+        fileType: 'PDF',
+        fileUrl: ''
+      });
+      fetchStudyMaterials();
+    } catch (err) {
+      addNotification('Error', err.response?.data?.error || 'Failed to publish study material', 'error');
+    } finally {
+      setIsSubmittingMaterial(false);
+    }
+  };
+
+  const handleDeleteStudyMaterial = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this study material?')) return;
+    try {
+      await api.delete(`/faculty/study-materials/${id}`);
+      addNotification('Deleted', 'Study material removed successfully', 'info');
+      fetchStudyMaterials();
+    } catch (err) {
+      addNotification('Error', err.response?.data?.error || 'Failed to delete material', 'error');
+    }
+  };
+
+  const autoFillSampleMaterial = () => {
+    const defaultSubId = subjects.length > 0 ? subjects[0].id : '';
+    setMaterialForm({
+      title: 'Module 1: Pointer Arithmetic & Memory Allocation Notes',
+      description: 'Official lecture notes covering pointer arithmetic, stack vs heap allocation, dynamic memory malloc/free, and memory leak prevention best practices.',
+      subjectId: defaultSubId,
+      unit: 'Unit 1: Memory Architecture',
+      fileType: 'PDF',
+      fileUrl: 'https://ocw.mit.edu/courses/pointers_and_memory.pdf'
+    });
+  };
+
   const facultyNavTabs = [
     { id: 'students', label: 'Student List', icon: Users },
+    { id: 'study_materials', label: 'Study Materials', icon: BookOpen },
+    { id: 'assignments', label: 'Assignments Review', icon: FileText },
+    { id: 'quiz_creator', label: 'Quiz Creator', icon: Plus },
+    { id: 'quizzes', label: 'Online Tests', icon: HelpCircle },
     { id: 'attendance', label: 'Mark Attendance', icon: CheckSquare },
     { id: 'history', label: 'Attendance History', icon: History },
     { id: 'analytics', label: 'Performance Analytics', icon: BarChart3 },
-    { id: 'quiz_creator', label: 'Quiz Creator', icon: Plus },
-    { id: 'quizzes', label: 'Online Tests', icon: HelpCircle },
     { id: 'gradebook', label: 'Gradebook', icon: FileSpreadsheet },
-    { id: 'assignments', label: 'Assignments Review', icon: FileText },
     { id: 'marks', label: 'Upload Marks', icon: Award },
     { id: 'schedule', label: 'Teaching Schedule', icon: Calendar }
   ];
@@ -684,6 +765,412 @@ export default function FacultyPortal({ facultyProfile, addNotification }) {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB: STUDY MATERIALS (NEW FEATURE) --- */}
+      {activeTab === 'study_materials' && (
+        <div className="space-y-6 animate-fade-in-up text-left">
+          
+          {/* Header Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 transition-colors">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+              <div>
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <h2 className="text-xl font-bold font-heading text-slate-900 dark:text-white">
+                    Course Study Materials & Resources
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Upload, organize, and distribute lecture notes, presentations, reference links, and code files to your students
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2.5">
+                <button
+                  type="button"
+                  onClick={autoFillSampleMaterial}
+                  className="px-3.5 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Sample Data</span>
+                </button>
+
+                <button
+                  onClick={() => setShowAddMaterialModal(true)}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition-all flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Upload Study Material</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Items</span>
+                <span className="text-2xl font-black font-heading text-slate-900 dark:text-white mt-1 block">
+                  {studyMaterials.length}
+                </span>
+              </div>
+              <div className="bg-rose-50/50 dark:bg-rose-950/20 p-4 rounded-xl border border-rose-100 dark:border-rose-900/40">
+                <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider block">PDF Notes</span>
+                <span className="text-2xl font-black font-heading text-rose-700 dark:text-rose-300 mt-1 block">
+                  {studyMaterials.filter(m => m.fileType === 'PDF').length}
+                </span>
+              </div>
+              <div className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Slide Decks</span>
+                <span className="text-2xl font-black font-heading text-amber-700 dark:text-amber-300 mt-1 block">
+                  {studyMaterials.filter(m => m.fileType === 'SLIDES').length}
+                </span>
+              </div>
+              <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40">
+                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider block">Web & Links</span>
+                <span className="text-2xl font-black font-heading text-blue-700 dark:text-blue-300 mt-1 block">
+                  {studyMaterials.filter(m => m.fileType === 'LINK').length}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-4 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Subject Selector */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold text-slate-500 shrink-0">Subject:</span>
+              <select
+                value={materialsSubjectFilter}
+                onChange={(e) => setMaterialsSubjectFilter(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs px-3 py-1.5 font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="ALL">All Assigned Subjects</option>
+                {subjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Type Filter Pills */}
+            <div className="flex items-center flex-wrap gap-1.5 text-xs">
+              {[
+                { id: 'ALL', label: 'All Types' },
+                { id: 'PDF', label: 'PDF Notes' },
+                { id: 'SLIDES', label: 'Slides' },
+                { id: 'LINK', label: 'Links' },
+                { id: 'CODE', label: 'Code' },
+                { id: 'DOCUMENT', label: 'Docs' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setMaterialsTypeFilter(t.id)}
+                  className={`px-3 py-1 rounded-xl font-semibold transition-all ${
+                    materialsTypeFilter === t.id
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input */}
+            <div className="relative min-w-[200px]">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={materialsSearch}
+                onChange={(e) => setMaterialsSearch(e.target.value)}
+                placeholder="Search materials..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+            </div>
+          </div>
+
+          {/* Materials Grid */}
+          {(() => {
+            const filtered = studyMaterials.filter(m => {
+              if (materialsSubjectFilter !== 'ALL' && m.subjectId !== materialsSubjectFilter) return false;
+              if (materialsTypeFilter !== 'ALL' && m.fileType !== materialsTypeFilter) return false;
+              if (materialsSearch.trim()) {
+                const q = materialsSearch.toLowerCase();
+                const inTitle = m.title?.toLowerCase().includes(q);
+                const inUnit = m.unit?.toLowerCase().includes(q);
+                const inDesc = m.description?.toLowerCase().includes(q);
+                return inTitle || inUnit || inDesc;
+              }
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center space-y-3">
+                  <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-base text-slate-800 dark:text-white">No Study Materials Found</h3>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    {studyMaterials.length === 0
+                      ? 'You have not uploaded any study material yet. Click below to share your first lecture notes or slides!'
+                      : 'No items match your filter criteria. Try clearing search or selecting another subject.'}
+                  </p>
+                  <button
+                    onClick={() => setShowAddMaterialModal(true)}
+                    className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 px-4 rounded-xl shadow-sm transition-all inline-flex items-center space-x-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Upload Study Material</span>
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filtered.map((mat) => {
+                  let badgeBg = 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-900/50';
+                  let Icon = FileText;
+
+                  if (mat.fileType === 'SLIDES') {
+                    badgeBg = 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/50';
+                    Icon = Layers;
+                  } else if (mat.fileType === 'LINK') {
+                    badgeBg = 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900/50';
+                    Icon = Link2;
+                  } else if (mat.fileType === 'CODE') {
+                    badgeBg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50';
+                    Icon = FileCode;
+                  } else if (mat.fileType === 'DOCUMENT') {
+                    badgeBg = 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-900/50';
+                    Icon = BookOpen;
+                  }
+
+                  return (
+                    <div
+                      key={mat.id}
+                      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-3">
+                        {/* Top badges row */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeBg}`}>
+                            <Icon className="w-3 h-3" />
+                            {mat.fileType}
+                          </span>
+
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                            {mat.subject?.code || 'CRS'}
+                          </span>
+                        </div>
+
+                        {/* Unit tag */}
+                        <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                          {mat.unit || 'General'}
+                        </div>
+
+                        {/* Title & Desc */}
+                        <h4 className="font-bold text-base text-slate-900 dark:text-white line-clamp-2">
+                          {mat.title}
+                        </h4>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                          {mat.description || 'No detailed instructions provided.'}
+                        </p>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                        {mat.fileUrl ? (
+                          <a
+                            href={mat.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white py-1.5 px-3 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center space-x-1"
+                          >
+                            <span>Open Resource</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <span className="flex-1 text-center text-xs text-slate-400 italic">No link attached</span>
+                        )}
+
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(mat.fileUrl || mat.title);
+                            addNotification('Copied', 'Resource link copied to clipboard', 'info');
+                          }}
+                          title="Copy Link"
+                          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteStudyMaterial(mat.id)}
+                          title="Delete material"
+                          className="p-2 text-rose-500 hover:text-rose-700 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* --- MODAL: UPLOAD STUDY MATERIAL --- */}
+      {showAddMaterialModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-fade-in-up">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white">
+                  Upload Study Material
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddMaterialModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStudyMaterial} className="space-y-4 text-xs text-left">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                  Material Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Unit 1: Pointers & Dynamic Allocation Lecture Notes"
+                  value={materialForm.title}
+                  onChange={(e) => setMaterialForm({ ...materialForm, title: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    Target Subject *
+                  </label>
+                  <select
+                    required
+                    value={materialForm.subjectId}
+                    onChange={(e) => setMaterialForm({ ...materialForm, subjectId: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold"
+                  >
+                    <option value="">Select Course</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    Resource Type
+                  </label>
+                  <select
+                    value={materialForm.fileType}
+                    onChange={(e) => setMaterialForm({ ...materialForm, fileType: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold"
+                  >
+                    <option value="PDF">📄 PDF Notes</option>
+                    <option value="SLIDES">📑 Presentation Slides (PPT)</option>
+                    <option value="LINK">🔗 Web / Drive Link</option>
+                    <option value="DOCUMENT">📖 Reference Document</option>
+                    <option value="CODE">💻 Code / Lab Material</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    Unit / Module / Topic
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Unit 1: Fundamentals"
+                    value={materialForm.unit}
+                    onChange={(e) => setMaterialForm({ ...materialForm, unit: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                    File URL / Cloud Link
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://... or notes_v1.pdf"
+                    value={materialForm.fileUrl}
+                    onChange={(e) => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-200 mb-1">
+                  Description & Student Guidance
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Key concepts, page references, and study objectives for students..."
+                  value={materialForm.description}
+                  onChange={(e) => setMaterialForm({ ...materialForm, description: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={autoFillSampleMaterial}
+                  className="text-indigo-600 dark:text-indigo-400 font-semibold text-xs hover:underline flex items-center space-x-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Fill Sample Content</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMaterialModal(false)}
+                    className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 font-semibold hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingMaterial}
+                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center space-x-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isSubmittingMaterial ? 'Uploading...' : 'Publish Material'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

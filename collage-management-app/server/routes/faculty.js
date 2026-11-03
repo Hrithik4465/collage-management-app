@@ -897,4 +897,102 @@ router.get('/gradebook', async (req, res) => {
   }
 });
 
+// --- STUDY MATERIALS ---
+
+// 1. Get study materials uploaded by faculty
+router.get('/study-materials', async (req, res) => {
+  const facultyId = req.user.profileId;
+  const { subjectId } = req.query;
+
+  try {
+    const whereClause = { facultyId };
+    if (subjectId) {
+      whereClause.subjectId = subjectId;
+    }
+
+    const materials = await prisma.studyMaterial.findMany({
+      where: whereClause,
+      include: {
+        subject: {
+          include: {
+            course: true,
+            semester: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(materials);
+  } catch (error) {
+    console.error('Fetch study materials error:', error);
+    res.status(500).json({ error: 'Failed to fetch study materials' });
+  }
+});
+
+// 2. Upload / Create new study material
+router.post('/study-materials', async (req, res) => {
+  const facultyId = req.user.profileId;
+  const { title, description, fileUrl, fileType, unit, subjectId } = req.body;
+
+  if (!title || !subjectId) {
+    return res.status(400).json({ error: 'Title and Subject are required' });
+  }
+
+  try {
+    const subject = await prisma.subject.findFirst({
+      where: { id: subjectId, facultyId },
+    });
+
+    if (!subject) {
+      return res.status(403).json({ error: 'You are not assigned to this subject' });
+    }
+
+    const material = await prisma.studyMaterial.create({
+      data: {
+        title,
+        description: description || '',
+        fileUrl: fileUrl || '',
+        fileType: fileType || 'PDF',
+        unit: unit || 'General',
+        subjectId,
+        facultyId,
+      },
+      include: {
+        subject: true,
+      },
+    });
+
+    res.status(201).json(material);
+  } catch (error) {
+    console.error('Create study material error:', error);
+    res.status(500).json({ error: 'Failed to create study material' });
+  }
+});
+
+// 3. Delete study material
+router.delete('/study-materials/:id', async (req, res) => {
+  const facultyId = req.user.profileId;
+  const { id } = req.params;
+
+  try {
+    const material = await prisma.studyMaterial.findFirst({
+      where: { id, facultyId },
+    });
+
+    if (!material) {
+      return res.status(404).json({ error: 'Study material not found or unauthorized' });
+    }
+
+    await prisma.studyMaterial.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Study material deleted successfully' });
+  } catch (error) {
+    console.error('Delete study material error:', error);
+    res.status(500).json({ error: 'Failed to delete study material' });
+  }
+});
+
 module.exports = router;

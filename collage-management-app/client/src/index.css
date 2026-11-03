@@ -269,3 +269,226 @@ input[type="number"]::-webkit-outer-spin-button {
   background: #0b0f19;
   border: 4px solid #334155;
 }
+
+/* ==========================================================================
+   MOBILE & DEVICE ADAPTABILITY UTILITIES (iOS / Android / Tablets / Desktops)
+   ========================================================================== */
+
+/* Universal smooth touch scrolling */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Hide scrollbar utility for touch snap carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Apple iPhone safe-area insets */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 12px);
+}
+
+.pl-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), 12px);
+}
+
+.pr-safe {
+  padding-right: max(env(safe-area-inset-right, 0px), 12px);
+}
+
+/* Mobile Touch Snap Behavior */
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap-align-start {
+  scroll-snap-align: start;
+}
+
+/* Prevent unwanted zoom on iPhone form inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ==========================================================================
+   DYNAMIC BRAND ACCENT COLOR SYSTEM
+   ========================================================================== */
+
+/* 1. Tech Indigo Scheme */
+html[data-accent="indigo"] .bg-orange-500,
+html[data-accent="indigo"] .bg-orange-600,
+html[data-accent="indigo"] .bg-brand-600,
+html[data-accent="indigo"] .bg-brand-500 {
+  background-color: #4f46e5 !important;
+}
+html[data-accent="indigo"] .hover\:bg-orange-600:hover,
+html[data-accent="indigo"] .hover\:bg-brand-500:hover {
+  background-color: #4338ca !important;
+}
+html[data-accent="indigo"] .text-orange-500,
+html[data-accent="indigo"] .text-orange-600,
+html[data-accent="indigo"] .text-brand-500,
+html[data-accent="indigo"] .text-brand-600 {
+  color: #6366f1 !important;
+}
+html[data-accent="indigo"] .border-orange-500,
+html[data-accent="indigo"] .border-brand-500 {
+  border-color: #4f46e5 !important;
+}
+html[data-accent="indigo"] .bg-orange-50,
+html[data-accent="indigo"] .bg-orange-100 {
+  background-color: #eef2ff !important;
+}
+html.dark[data-accent="indigo"] .bg-orange-950,
+html.dark[data-accent="indigo"] .dark\:bg-orange-950\/60,
+html.dark[data-accent="indigo"] .dark\:bg-orange-950\/30 {
+  background-color: rgba(49, 46, 129, 0.4) !important;
+}
+
+/* 2. Emerald Green Scheme */
+html[data-accent="emerald"] .bg-orange-500,
+html[data-accent="emerald"] .bg-orange-600,
+html[data-accent="emerald"] .bg-brand-600,
+html[data-accent="emerald"] .bg-brand-500 {
+  background-color: #059669 !important;
+}
+html[data-accent="emerald"] .hover\:bg-orange-600:hover,
+html[data-accent="emerald"] .hover\:bg-brand-500:hover {
+  background-color: #047857 !important;
+}
+html[data-accent="emerald"] .text-orange-500,
+html[data-accent="emerald"] .text-orange-600,
+html[data-accent="emerald"] .text-brand-500,
+html[data-accent="emerald"] .text-brand-600 {
+  color: #10b981 !important;
+}
+html[data-accent="emerald"] .border-orange-500,
+html[data-accent="emerald"] .border-brand-500 {
+  border-color: #059669 !important;
+}
+html[data-accent="emerald"] .bg-orange-50,
+html[data-accent="emerald"] .bg-orange-100 {
+  background-color: #ecfdf5 !important;
+}
+html.dark[data-accent="emerald"] .bg-orange-950,
+html.dark[data-accent="emerald"] .dark\:bg-orange-950\/60,
+html.dark[data-accent="emerald"] .dark\:bg-orange-950\/30 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+}
+
+/* 3. Royal Violet Scheme */
+html[data-accent="violet"] .bg-orange-500,
+html[data-accent="violet"] .bg-orange-600,
+html[data-accent="violet"] .bg-brand-600,
+html[data-accent="violet"] .bg-brand-500 {
+  background-color: #7c3aed !important;
+}
+html[data-accent="violet"] .hover\:bg-orange-600:hover,
+html[data-accent="violet"] .hover\:bg-brand-500:hover {
+  background-color: #6d28d9 !important;
+}
+html[data-accent="violet"] .text-orange-500,
+html[data-accent="violet"] .text-orange-600,
+html[data-accent="violet"] .text-brand-500,
+html[data-accent="violet"] .text-brand-600 {
+  color: #8b5cf6 !important;
+}
+html[data-accent="violet"] .border-orange-500,
+html[data-accent="violet"] .border-brand-500 {
+  border-color: #7c3aed !important;
+}
+html[data-accent="violet"] .bg-orange-50,
+html[data-accent="violet"] .bg-orange-100 {
+  background-color: #f5f3ff !important;
+}
+html.dark[data-accent="violet"] .bg-orange-950,
+html.dark[data-accent="violet"] .dark\:bg-orange-950\/60,
+html.dark[data-accent="violet"] .dark\:bg-orange-950\/30 {
+  background-color: rgba(76, 29, 149, 0.4) !important;
+}
+
+/* 4. Default LMS Orange Scheme */
+html[data-accent="orange"] .bg-orange-500 {
+  background-color: #f97316 !important;
+}
+
+/* ==========================================================================
+   DYNAMIC READING FONT SCALE SYSTEM
+   ========================================================================== */
+html[data-font-scale="medium"] {
+  font-size: 16px !important;
+}
+html[data-font-scale="medium"] .text-xs,
+html[data-font-scale="medium"] .text-\[10px\],
+html[data-font-scale="medium"] .text-\[11px\] {
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+html[data-font-scale="medium"] .text-sm {
+  font-size: 15.5px !important;
+  line-height: 22px !important;
+}
+html[data-font-scale="medium"] .text-base {
+  font-size: 17.5px !important;
+  line-height: 26px !important;
+}
+
+html[data-font-scale="large"] {
+  font-size: 18px !important;
+}
+html[data-font-scale="large"] .text-xs,
+html[data-font-scale="large"] .text-\[10px\],
+html[data-font-scale="large"] .text-\[11px\] {
+  font-size: 15px !important;
+  line-height: 22px !important;
+}
+html[data-font-scale="large"] .text-sm {
+  font-size: 17.5px !important;
+  line-height: 25px !important;
+}
+html[data-font-scale="large"] .text-base {
+  font-size: 19.5px !important;
+  line-height: 28px !important;
+}
+html[data-font-scale="large"] .text-lg {
+  font-size: 22px !important;
+  line-height: 30px !important;
+}
+html[data-font-scale="large"] .text-xl {
+  font-size: 25px !important;
+  line-height: 34px !important;
+}
+
+/* High Contrast Outdoor Mode */
+html.high-contrast {
+  filter: contrast(118%);
+}
+html.high-contrast * {
+  border-color: rgba(15, 23, 42, 0.4) !important;
+}
+html.dark.high-contrast * {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
