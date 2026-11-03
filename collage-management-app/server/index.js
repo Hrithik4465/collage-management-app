@@ -28,19 +28,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes Mounting
-app.use('/api/auth', authRoutes);
-app.use('/api/common', commonRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/faculty', facultyRoutes);
-app.use('/api/student', studentRoutes);
+// API Routes Mounting (support both with and without /api prefix for Vercel compatibility)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/common', '/common'], commonRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
+app.use(['/api/faculty', '/faculty'], facultyRoutes);
+app.use(['/api/student', '/student'], studentRoutes);
 
-// Simple Health Check & Root API Status
-app.get('/health', (req, res) => {
+// Simple Health Check & Root API Status (both with and without /api prefix)
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
 });
 
-app.get('/', (req, res) => {
+app.get(['/', '/api'], (req, res) => {
   res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
 });
 
