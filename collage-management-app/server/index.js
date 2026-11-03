@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -35,16 +36,24 @@ app.use(['/api/admin', '/admin'], adminRoutes);
 app.use(['/api/faculty', '/faculty'], facultyRoutes);
 app.use(['/api/student', '/student'], studentRoutes);
 
-// Simple Health Check & Root API Status (both with and without /api prefix)
+// Serve static frontend assets from public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Simple Health Check & API Status
 app.get(['/health', '/api/health'], (req, res) => {
   res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
 });
 
-app.get(['/', '/api'], (req, res) => {
-  res.json({ status: 'OK', message: 'College Management System API is running smoothly.' });
+// Single Page Application (SPA) fallback: serve frontend index.html for all non-API GET requests
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.url.startsWith('/api/')) {
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    return res.sendFile(indexPath);
+  }
+  next();
 });
 
-// 404 Route handler
+// 404 Route handler for unknown endpoints
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });

@@ -7,8 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
 export default function App() {
-  const [appUrl, setAppUrl] = useState('http://192.168.0.107:5173');
-  const [inputUrl, setInputUrl] = useState('http://192.168.0.107:5173');
+  const [appUrl, setAppUrl] = useState('https://collage-management-app.vercel.app');
+  const [inputUrl, setInputUrl] = useState('https://collage-management-app.vercel.app');
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -69,9 +69,9 @@ export default function App() {
 
             <View style={styles.presetGrid}>
               <TouchableOpacity 
-                style={[styles.modeCard, appUrl.includes('loca.lt') && styles.modeCardActive]}
+                style={[styles.modeCard, appUrl.includes('vercel.app') && styles.modeCardActive]}
                 onPress={() => {
-                  const url = 'https://tasty-bars-wonder.loca.lt';
+                  const url = 'https://collage-management-app.vercel.app';
                   setAppUrl(url);
                   setInputUrl(url);
                   setIsEditingUrl(false);
@@ -80,14 +80,14 @@ export default function App() {
                 }}
               >
                 <Text style={styles.modeIcon}>🌐</Text>
-                <Text style={styles.modeTitle}>Cloud Gateway</Text>
-                <Text style={styles.modeDesc}>Any 4G / 5G Network</Text>
+                <Text style={styles.modeTitle}>Cloud Server</Text>
+                <Text style={styles.modeDesc}>Any 4G / 5G / Wi-Fi</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={[styles.modeCard, (appUrl.includes('192.168') || appUrl.includes('localhost') || appUrl.includes('10.')) && styles.modeCardActive]}
                 onPress={() => {
-                  const url = 'http://192.168.0.107:5173';
+                  const url = 'http://10.234.143.198:5173';
                   setAppUrl(url);
                   setInputUrl(url);
                   setIsEditingUrl(false);
@@ -97,7 +97,7 @@ export default function App() {
               >
                 <Text style={styles.modeIcon}>📡</Text>
                 <Text style={styles.modeTitle}>Local Wi-Fi</Text>
-                <Text style={styles.modeDesc}>192.168.0.107</Text>
+                <Text style={styles.modeDesc}>10.234.143.198</Text>
               </TouchableOpacity>
             </View>
 
@@ -106,7 +106,7 @@ export default function App() {
                 style={styles.customInput}
                 value={inputUrl}
                 onChangeText={setInputUrl}
-                placeholder="http://192.168.0.107:5173"
+                placeholder="https://collage-management-app.vercel.app"
                 placeholderTextColor="#64748b"
                 autoCapitalize="none"
                 autoCorrect={false}
